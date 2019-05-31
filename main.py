@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 import requests
 import sys
 import time
@@ -57,7 +59,7 @@ class YouDaoNoteSession(requests.Session):
                 cate = (i['fileEntry']['name'])
                 self.getNoteList(id, cate)
         except e:
-            print('先在web登录，再执行些文件')
+            print('重新在web浏览器登录一遍，再执行此文件')
 
     def getNoteList(self, id, cate):
         response = self.get('https://note.youdao.com/yws/api/personal/file/'+id+'?all=true&f=true&len=100&sort=1&isReverse=false&method=listPageByParentId&keyfrom=web&cstk='+self.cstk)
@@ -66,7 +68,10 @@ class YouDaoNoteSession(requests.Session):
         for i in jsonList:
             id = (i['fileEntry']['id'])
             name = (i['fileEntry']['name'])
-            self.getNote(id, name, cate)
+            if i['fileEntry']['dir'] is True:
+                self.getNoteList(id, cate+'/'+name)
+            else:
+                self.getNote(id, name, cate)
 
     def getNote(self, id, name, parent):
         data = {

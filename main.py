@@ -6,6 +6,9 @@ import time
 import hashlib
 import json
 import os
+import traceback
+
+import codecs
 
 
 def timestamp():
@@ -58,7 +61,9 @@ class YouDaoNoteSession(requests.Session):
                 id = (i['fileEntry']['id'])
                 cate = (i['fileEntry']['name'])
                 self.getNoteList(id, cate)
-        except e:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             print('重新在web浏览器登录一遍，再执行此文件')
 
     def getNoteList(self, id, cate):
@@ -71,7 +76,11 @@ class YouDaoNoteSession(requests.Session):
             if i['fileEntry']['dir'] is True:
                 self.getNoteList(id, cate+'/'+name)
             else:
-                self.getNote(id, name, cate)
+                try:
+                    self.getNote(id, name, cate)
+                except Exception as e:
+                    print('### CRUSH ON ' + name)
+                    print(e)
 
     def getNote(self, id, name, parent):
         data = {
@@ -82,12 +91,13 @@ class YouDaoNoteSession(requests.Session):
         }
         response = self.post('https://note.youdao.com/yws/api/personal/sync?method=download&keyfrom=web', data=data)
         content = (response.content.decode('utf-8'))
-        print(name)
+        print('+++' + name + '+++')
         if not os.path.exists(parent):
             os.makedirs(parent)
         if not name.endswith('.md'):
             name += '.html'
-        with open('%s/%s' % (parent, name), 'w') as fp:
+        # with open('%s/%s' % (parent, name), 'w') as fp:
+        with codecs.open('%s/%s' % (parent, name), 'w', encoding='utf-8') as fp:
             fp.write(content)
 
 
@@ -102,3 +112,4 @@ if __name__ == '__main__':
     sess = YouDaoNoteSession()
     sess.login(username, password)
     sess.getNoteFolder()
+
